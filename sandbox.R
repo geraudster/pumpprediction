@@ -1,0 +1,113 @@
+trainset.values <- read.csv('trainset_values.csv')
+trainset.labels <- read.csv('trainset_labels.csv')
+testset.values <- read.csv('testset_values.csv')
+
+extraction_type.levels <- levels(factor(trainset.values$extraction_type))
+testset.values$extraction_type <- factor(testset.values$extraction_type, levels = extraction_type.levels)
+
+
+library(ggplot2)
+qplot(trainset.labels$status_group, fill = trainset.labels$status_group)
+
+library(reshape2)
+library(plyr)
+library(dplyr)
+
+trainset <- join(trainset.values, trainset.labels, 'id')
+
+library(stringr)
+histMissingValues <- function(dataset) {
+  na.count <- lapply(dataset, function(x) { 
+    if(is.numeric(x)) mean(x == 0) * 100
+    else mean(str_trim(x, 'both') == '') * 100
+    })
+  na.count.melt <- melt(data.frame(na.count))
+  qplot(x = variable, y = value, data = na.count.melt,
+        geom = 'bar',
+        stat = 'identity',
+        fill = class(value)) + coord_flip()
+}
+
+histMissingValues(trainset)
+
+library(psych)
+describe(trainset)
+
+getNumericColumns <- function(dataset) {
+  sapply(dataset, is.numeric)
+}
+
+numericColumns <- getNumericColumns(trainset)[-c(1,41)]
+charColumns <- !numericColumns
+longtrainset <- melt(trainset, id.vars = c('id', 'status_group', names(which(charColumns))))
+
+qplot(status_group, log(value + 0.1),
+      data = longtrainset[longtrainset$variable == 'amount_tsh',],fill = status_group, geom = c('boxplot'))
+
+qplot(status_group, value,
+      data = longtrainset[longtrainset$variable == 'gps_height',],fill = status_group, geom = c('boxplot'))
+
+qplot(status_group, value,
+      data = longtrainset,fill = status_group, geom = c('boxplot')) + 
+  facet_wrap(~ variable, scales = 'free_y')
+
+summary(trainset)
+
+selectedColumns <- c(
+  'id',
+  'gps_height',
+  'basin',
+  'extraction_type',
+  'management',
+  'payment_type',
+  'quantity',
+  'quality_group',
+  'source_type',
+  'waterpoint_type')
+outcomeVar <- 'status_group'
+
+reducedTrainset <- trainset[, c(selectedColumns, outcomeVar)]
+
+library(caret)
+library(modelUtils)
+set.seed(1234)
+inTrain <- createDataPartition(y=reducedTrainset$status_group, p=0.8, list=FALSE)
+training <- reducedTrainset[inTrain,]
+testing <- reducedTrainset[-inTrain,]
+tc <- trainControl(classProbs = TRUE, method = "repeatedcv",
+                   number = 5,
+                   repeats = 10)
+
+rpart.grid <- expand.grid(cp=seq(0.001, 0.1, 0.001))
+rpartModel <- testModel(formula = NULL, training,
+                        testing,
+                        'status_group',
+                        'rpart', trControl = tc, tuneGrid = rpart.grid)
+
+rfModel <- testModel(formula = NULL, training,
+                        testing,
+                        'status_group',
+                        'rf', trControl = tc)
+
+
+rpartProbs <- extractProb(list(rpartModel$fit), unkX = testset.values)
+table(rpartProbs$pred)
+
+rpartSubmission <- data.frame(id = testset.values$id, status_group = rpartProbs$pred)
+write.table(rpartSubmission, 
+            paste0('rpartSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
+            row.names = FALSE,
+            sep=',', quote = FALSE)
+
+
+rfProbs <- extractProb(list(rfModel$fit), unkX = testset.values[,selectedColumns])
+table(rfProbs$pred)
+
+rfSubmission <- data.frame(id = testset.values$id, status_group = rfProbs$pred)
+write.table(rfSubmission, 
+            paste0('rfSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
+            row.names = FALSE,
+            sep=',', quote = FALSE)
+
+writeSubmission(rfModel, testset.values, 'id', 'status_group', 'pumpprediction')
+
