@@ -5,6 +5,9 @@ testset.values <- read.csv('testset_values.csv')
 extraction_type.levels <- levels(factor(trainset.values$extraction_type))
 testset.values$extraction_type <- factor(testset.values$extraction_type, levels = extraction_type.levels)
 
+sapply(trainset.values, class)
+cor(trainset.values)
+summary(trainset.values)
 
 library(ggplot2)
 qplot(trainset.labels$status_group, fill = trainset.labels$status_group)
@@ -78,7 +81,7 @@ tc <- trainControl(classProbs = TRUE, method = "repeatedcv",
                    number = 5,
                    repeats = 10)
 
-rpart.grid <- expand.grid(cp=seq(0.001, 0.1, 0.001))
+rpart.grid <- expand.grid(cp=seq(0.005, 0.05, 0.005))
 rpartModel <- testModel(formula = NULL, training,
                         testing,
                         'status_group',
@@ -88,6 +91,13 @@ rfModel <- testModel(formula = NULL, training,
                         testing,
                         'status_group',
                         'rf', trControl = tc)
+
+set.seed(1234)
+gbmModel <- testModel(formula = NULL, training,
+                     testing,
+                     'status_group',
+                     'gbm')
+                     # , trControl = tc)
 
 
 rpartProbs <- extractProb(list(rpartModel$fit), unkX = testset.values)
