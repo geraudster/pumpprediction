@@ -1,0 +1,101 @@
+# Pump it up with H2O and R
+
+![H2O Logo](pics/h2o-logo_360.png)
+Competition link: http://www.drivendata.org/competitions/7/page/23/
+
+*TODO: small description
+
+## Data codebook
+
+Let's load the data in R and see how it looks like:
+```{r}
+trainset.values <- read.csv('trainset_values.csv')
+trainset.labels <- read.csv('trainset_labels.csv')
+testset.values <- read.csv('testset_values.csv')
+dim(trainset.values)
+colnames(trainset.values)
+str(trainset.values)
+```
+
+```{r}
+table(trainset.labels$status_group)
+```
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.width=10}
+library(ggplot2)
+library(gridExtra)
+boxplots <- qplot(trainset.labels$status_group, 
+                  fill = trainset.labels$status_group) +
+  xlab('Status') +
+  scale_fill_manual(values=c("green", "orange", "red"), 
+                     name="Status") +
+  ylab('Count') +
+  ggtitle('Water pump status') +
+  theme(legend.position="none")
+
+library(plyr)
+library(ggmap)
+filtered.data <- join(trainset.values, trainset.labels)
+filtered.data <- subset(filtered.data, longitude != 0)
+bbox <- make_bbox(longitude, latitude, data = filtered.data)
+map <- qmap(bbox)
+# map <- map + stat_density2d(aes(x=longitude, y=latitude, fill = ..level.., alpha = ..level.., colour = status_group),
+#                             data = filtered.data,
+#                             size = 0.01, bins = 16, geom = "polygon")
+map <- map + geom_point(aes(x=longitude, y=latitude, color=status_group), data = filtered.data) +
+  scale_color_manual(values=c("green", "orange", "red"), 
+                       name="Status")
+grid.arrange(boxplots, map, nrow = 1, ncol = 2, widths = c(1,2))
+```
+
+## Data cleaning
+
+```{r}
+
+```
+
+## A few stats
+
+```{r}
+
+```
+
+## H2O
+
+### Pre-requisites
+
+* Java
+
+### H2O Installation
+
+```{r, eval = FALSE}
+install.packages("h2o", type = "source", repos = (c("http://h2o-release.s3.amazonaws.com/h2o/rel-tibshirani/8/R")))
+```
+
+### Your first instance
+
+```{r, cache = TRUE}
+library(h2o)
+localH2O <- h2o.init()
+```
+
+### Loading data into H2O
+
+```{r, cache = TRUE}
+trainset.hex <- h2o.uploadFile(path = 'trainset_values.csv', destination_frame = 'trainset.hex', sep = ',', header = TRUE)
+labels.hex <- h2o.uploadFile(path = 'trainset_labels.csv', destination_frame = 'labels.hex', sep = ',', header = TRUE)
+
+trainsetFull.hex <- h2o.merge(trainset.hex, labels.hex)
+```
+
+### Machine Learning
+
+### Results
+
+### Shutting down
+
+```{r, cache = TRUE}
+h2o.shutdown(prompt = FALSE)
+```
+
+
