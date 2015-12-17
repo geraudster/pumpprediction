@@ -50,9 +50,7 @@ grid.arrange(boxplots, map, nrow = 1, ncol = 2, widths = c(1,2))
 
 ## Data cleaning
 
-```{r}
-
-```
+For performance reason, we will remove variables with lots of categories like 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder'
 
 ## A few stats
 
@@ -88,7 +86,48 @@ labels.hex <- h2o.uploadFile(path = 'trainset_labels.csv', destination_frame = '
 trainsetFull.hex <- h2o.merge(trainset.hex, labels.hex)
 ```
 
+Data should be loaded in H2O now, we can try a few commands:
+
+```{r, cache = TRUE}
+head(trainsetFull.hex)
+summary(trainsetFull.hex)
+```
+
 ### Machine Learning
+
+Let's split the data to validate our model:
+```{r, cache = TRUE}
+splits <- h2o.splitFrame(trainsetFull.hex, 0.8)
+train <- splits[[1]]
+test <- splits[[2]]
+
+dim(train)
+dim(test)
+```
+
+We will restrict the list of predictors as some nominal values contain lots of categories ('wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder'):
+
+```{r, cache = TRUE}
+allVariables <- colnames(train)
+predictors <- colnames(train)[!(allVariables %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder', 'status_group', 'recorded_by'))]
+```
+
+
+Now we are going to train our random forest on the dataset:
+
+```{r, cache = TRUE}
+rfModel <- h2o.randomForest(predictors, 'status_group', train)
+```
+
+Let's validate it:
+```{r, cache = TRUE}
+confusionMatrix <- h2o.confusionMatrix(rfModel, newdata = test)
+
+# Render table
+library(knitr)
+kable(confusionMatrix)
+```
+
 
 ### Results
 
