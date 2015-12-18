@@ -16,7 +16,7 @@ sapply(trainsetFull.split, dim)
 sapply(trainsetFull.hex, class)
 allVariables <- colnames(trainset.hex)
 
-predictors <- colnames(trainset.hex)[!(allVariables %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder'))]
+predictors <- colnames(trainset.hex)[!(allVariables %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'funder'))]
 
 hyper_params <- list(
   hidden=list(c(rep(50, 1), rep(25, 1)),
@@ -48,12 +48,12 @@ validation.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/testset_value
 
 # model <- models[[3]]
 # model <- rfModel
-model <- gbmModel
+model <- rfModel
 preds <- h2o.predict(model, validation.hex)
 head(validation.hex$id)
 submission <- data.frame(as.data.frame(validation.hex$id), as.data.frame(preds$predict))
 colnames(submission) <- c('id', 'status_group')
 write.table(submission, 
-            paste0('gbmH2oSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
+            paste0('rfH2oSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
             row.names = FALSE,
             sep=',', quote = FALSE)
