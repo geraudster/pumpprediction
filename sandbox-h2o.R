@@ -57,3 +57,7 @@ write.table(submission,
             paste0('rfH2oSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
             row.names = FALSE,
             sep=',', quote = FALSE)
+
+# Variable importance
+varImpDf <- as.data.frame(rfModel@model$variable_importances)
+ggplot(varImpDf, aes(reorder(variable, scaled_importance), scaled_importance)) +  geom_bar(stat = 'identity') + coord_flip()
