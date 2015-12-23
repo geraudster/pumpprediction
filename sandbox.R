@@ -140,3 +140,12 @@ write.table(rfSubmission,
 
 writeSubmission(rfModel, testset.values, 'id', 'status_group', 'pumpprediction')
 
+## Impute try
+
+library(mice)
+pumps2 <- join(trainset.values, trainset.labels)
+emptyCoords <- pumps2$longitude == 0
+pumps2[emptyCoords, 'longitude'] <- NA
+pumps2[emptyCoords, 'latitude'] <- NA
+pumps2[emptyCoords, 'gps_height'] <- NA
+imp.pimp <- mice(pumps2)
