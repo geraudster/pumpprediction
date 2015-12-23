@@ -38,14 +38,15 @@ library(ggmap)
 filtered.data <- join(trainset.values, trainset.labels)
 filtered.data <- subset(filtered.data, longitude != 0)
 bbox <- make_bbox(longitude, latitude, data = filtered.data)
-map <- qmap(bbox)
+map <- get_map(bbox, source = 'osm')
+plot.map <- ggmap(map)
 # map <- map + stat_density2d(aes(x=longitude, y=latitude, fill = ..level.., alpha = ..level.., colour = status_group),
 #                             data = filtered.data,
 #                             size = 0.01, bins = 16, geom = "polygon")
-map <- map + geom_point(aes(x=longitude, y=latitude, color=status_group), data = filtered.data) +
+plot.map <- plot.map + geom_point(aes(x=longitude, y=latitude, color=status_group), data = filtered.data) +
   scale_color_manual(values=c("green", "orange", "red"), 
-                       name="Status")
-grid.arrange(boxplots, map, nrow = 1, ncol = 2, widths = c(1,2))
+                     name="Status")
+grid.arrange(boxplots, plot.map, nrow = 1, ncol = 2, widths = c(1,2))
 ```
 
 ## Data cleaning
