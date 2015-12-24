@@ -10,6 +10,8 @@ trainset.values[emptyPos, 'gps_height'] <- NA
 emptyConstrutionYear <- trainset.values$construction_year == 0
 trainset.values[emptyConstrutionYear,'construction_year'] <- NA
 
+trainset.values$wpt_name <- as.character(trainset.values$wpt_name)
+
 emptyPos <- testset.values$longitude == 0
 testset.values[emptyPos, 'longitude'] <- NA
 testset.values[emptyPos, 'latitude'] <- NA
@@ -23,6 +25,8 @@ imp <- amelia(head(trainset.values, 10000), idvars = c('ward', 'lga'))
 imp <- amelia(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')], noms = c('ward', 'lga'))
 extraction_type.levels <- levels(factor(trainset.values$extraction_type))
 testset.values$extraction_type <- factor(testset.values$extraction_type, levels = extraction_type.levels)
+
+trainset.impute.values <- read.csv('training-NA-imp5.csv', na.strings = '')
 
 sapply(trainset.values, class)
 cor(trainset.values)
