@@ -1,9 +1,32 @@
-trainset.values <- read.csv('trainset_values.csv')
-trainset.labels <- read.csv('trainset_labels.csv')
-testset.values <- read.csv('testset_values.csv')
+trainset.values <- read.csv('trainset_values.csv', na.strings = "")
+trainset.labels <- read.csv('trainset_labels.csv', na.strings = "")
+testset.values <- read.csv('testset_values.csv', na.strings = "")
 
+emptyPos <- trainset.values$longitude == 0
+trainset.values[emptyPos, 'longitude'] <- NA
+trainset.values[emptyPos, 'latitude'] <- NA
+trainset.values[emptyPos, 'gps_height'] <- NA
+
+emptyConstrutionYear <- trainset.values$construction_year == 0
+trainset.values[emptyConstrutionYear,'construction_year'] <- NA
+
+trainset.values$wpt_name <- as.character(trainset.values$wpt_name)
+
+emptyPos <- testset.values$longitude == 0
+testset.values[emptyPos, 'longitude'] <- NA
+testset.values[emptyPos, 'latitude'] <- NA
+testset.values[emptyPos, 'gps_height'] <- NA
+
+library(mice)
+imp <- mice(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')])
+
+library(Amelia)
+imp <- amelia(head(trainset.values, 10000), idvars = c('ward', 'lga'))
+imp <- amelia(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')], noms = c('ward', 'lga'))
 extraction_type.levels <- levels(factor(trainset.values$extraction_type))
 testset.values$extraction_type <- factor(testset.values$extraction_type, levels = extraction_type.levels)
+
+trainset.impute.values <- read.csv('training-NA-imp5.csv', na.strings = '')
 
 sapply(trainset.values, class)
 cor(trainset.values)
