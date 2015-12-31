@@ -14,20 +14,38 @@ predictors <- colnames(trainsetImputeFull.hex)[!(allVariables
                                                   'status_group', 'functional', 'nonfunctional', 'needrepair', 'lga', 'recorded_by', 'quantity'))]
 trainsetImputeFull.split <- h2o.splitFrame(trainsetImputeFull.hex, 0.8, seed = 123)
 ovaModels <- list()
-for(outcome in c('functional', 'nonfunctional', 'needrepair')) {
-  rfModel <- h2o.randomForest(predictors, outcome, trainsetImputeFull.split[[1]], balance_classes = TRUE)
+ovaModels['needrepair'] <- h2o.deeplearning(predictors, outcome, trainsetImputeFull.split[[1]], balance_classes = TRUE, hidden = c(20, 20, 20))
+
+for(outcome in c('functional', 'nonfunctional')) {
+  #model <- h2o.deeplearning(predictors, outcome, trainsetImputeFull.split[[1]], balance_classes = FALSE, hidden = c(20, 20, 20))
+  model <- h2o.randomForest(predictors, outcome, trainsetImputeFull.split[[1]], balance_classes = TRUE)
   # gbmModel <- h2o.gbm(predictors, outcome, trainsetImputeFull.split[[1]], balance_classes = FALSE)
 #   glmModel <- h2o.glm(predictors, outcome, trainsetImputeFull.hex, family = 'binomial')
-  ovaModels[outcome] <- rfModel
+  ovaModels[outcome] <- model
 }
 
+# Append OVA predictors
+ovaPreds <- sapply(names(ovaModels), function(x) { 
+  as.vector(h2o.predict(ovaModels[[x]], trainsetImputeFull.split[[1]])$p1)
+})
+colnames(ovaPreds) <- gsub('^', 'pred_', colnames(ovaPreds))
+ovaPredsDf <- cbind(as.data.frame(trainsetImputeFull.split[[1]][, c('id', 'status_group')]), as.data.frame(ovaPreds))
+trainsetImputeFullWithPreds.hex <- as.h2o(ovaPredsDf)
+
+rfModelWithOVAPreds <- h2o.gbm(c('pred_functional', 'pred_nonfunctional', 'pred_needrepair'), 'status_group', trainsetImputeFullWithPreds.hex)
+
+
+# Append OVA pred to test set
 lapply(ovaModels, h2o.confusionMatrix)
 lapply(ovaModels, function(x) { h2o.performance(x, trainsetImputeFull.split[[2]]) })
 ovaPreds <- sapply(names(ovaModels), function(x) { 
   as.vector(h2o.predict(ovaModels[[x]], trainsetImputeFull.split[[2]])$p1)
 })
 colnames(ovaPreds) <- gsub('^', 'pred_', colnames(ovaPreds))
-ovaPredsDf <- cbind(as.data.frame(trainsetImputeFull.split[[2]]), as.data.frame(ovaPreds))
+validationImputeFullWithPreds.hex <- as.h2o(cbind(as.data.frame(trainsetImputeFull.split[[2]][, c('id', 'status_group')]), as.data.frame(ovaPreds)))
+
+h2o.performance(rfModelWithOVAPreds, validationImputeFullWithPreds.hex)
+
 ovaPredsDf$vote <- factor(apply(ovaPredsDf[, c('pred_functional', 'pred_nonfunctional', 'pred_needrepair')], 1, which.max),
                           levels = c(1, 3, 2), labels = c('functional', 'functional needs repair', 'non functional'))
 

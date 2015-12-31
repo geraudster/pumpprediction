@@ -12,16 +12,16 @@ Let's load the data in R and see how it looks like:
 trainset.values <- read.csv('trainset_values.csv')
 trainset.labels <- read.csv('trainset_labels.csv')
 testset.values <- read.csv('testset_values.csv')
-dim(trainset.values)
-colnames(trainset.values)
+```
+
+The dataset contains `r nrow(trainset.values)` observations caracterized by `r ncol(trainset.values)` variables.
+Below is a sample:
+```{r}
 str(trainset.values)
 ```
 
-```{r}
-table(trainset.labels$status_group)
-```
-
-```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.width=10}
+Now let's see the data repartition depending on the label to be predicted (functional, non functional, need repairs):
+```{r, echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE, fig.width=10}
 library(ggplot2)
 library(gridExtra)
 boxplots <- qplot(trainset.labels$status_group, 
@@ -49,34 +49,40 @@ plot.map <- plot.map + geom_point(aes(x=longitude, y=latitude, color=status_grou
 grid.arrange(boxplots, plot.map, nrow = 1, ncol = 2, widths = c(1,2))
 ```
 
-## Data cleaning
+Here we can see two things:
 
-For performance reason, we will remove variables with lots of categories like 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder'
+* first, classes are imbalanced, there are far less 'need repair' than other classes
+* second, the map seems to indicate that geographic position has an importance on the pump status
 
-## A few stats
-
-```{r}
-
-```
 
 ## H2O
 
 ### Pre-requisites
 
-* Java
+* R
+* Java: JRE at least 1.6 (1.7 recommended)
 
-### H2O Installation
+### H2O Installation from R
 
+The following command wil install latest version of H2O:
 ```{r, eval = FALSE}
 install.packages("h2o", type = "source", repos = (c("http://h2o-release.s3.amazonaws.com/h2o/rel-tibshirani/8/R")))
 ```
 
 ### Your first instance
 
+Starting a local instance is quite simple:
 ```{r, cache = TRUE}
 library(h2o)
 localH2O <- h2o.init()
 ```
+
+You can also configure some extra parameters like RAM, thread number:
+```{r, eval = FALSE}
+localH2O <- h2o.init(nthreads = 12, max_mem_size = '24G')
+```
+
+This will start a local instance running on 12 threads and 24GB RAM. There are also option to connect on remote cluster.
 
 ### Loading data into H2O
 
@@ -105,6 +111,13 @@ test <- splits[[2]]
 dim(train)
 dim(test)
 ```
+
+Now we'll check label proportion:
+```{r, cache = TRUE}
+prop.table(table(as.vector(train$status_group)))
+prop.table(table(as.vector(test$status_group)))
+```
+
 
 We will restrict the list of predictors as some nominal values contain lots of categories ('wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder'):
 

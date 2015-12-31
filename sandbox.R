@@ -2,34 +2,115 @@ trainset.values <- read.csv('trainset_values.csv', na.strings = "")
 trainset.labels <- read.csv('trainset_labels.csv', na.strings = "")
 testset.values <- read.csv('testset_values.csv', na.strings = "")
 
-emptyPos <- trainset.values$longitude == 0
-trainset.values[emptyPos, 'longitude'] <- NA
-trainset.values[emptyPos, 'latitude'] <- NA
-trainset.values[emptyPos, 'gps_height'] <- NA
+library(lubridate)
+prepareDataSet <- function(dataset) {
+  emptyPos <- dataset$longitude == 0
+  dataset[emptyPos, 'longitude'] <- NA
+  dataset[emptyPos, 'latitude'] <- NA
+  dataset[emptyPos, 'gps_height'] <- NA
+  
+  emptyConstrutionYear <- dataset$construction_year == 0
+  dataset[emptyConstrutionYear,'construction_year'] <- NA
+  
+  dataset$wpt_name <- as.character(dataset$wpt_name)
+  
+  dataset$date_recorded <- ymd(dataset$date_recorded)
+  dataset$date_recorded_year <- year(dataset$date_recorded)
+  dataset$date_recorded_year_ago <- 2015 - dataset$date_recorded_year
+  dataset$date_recorded_month <- month(dataset$date_recorded)
+  dataset$date_recorded_day <- day(dataset$date_recorded)
+  
+  # dataset$construction_year <- parse_date_time(dataset$construction_year, 'y')
+  dataset$region_code <- factor(dataset$region_code)
+  dataset$district_code <- factor(dataset$district_code)
+  dataset
+}
 
-emptyConstrutionYear <- trainset.values$construction_year == 0
-trainset.values[emptyConstrutionYear,'construction_year'] <- NA
+trainset.values <- prepareDataSet(trainset.values)
+testset.values <- prepareDataSet(testset.values)
 
-trainset.values$wpt_name <- as.character(trainset.values$wpt_name)
+trainset.values$type <- 'train'
+testset.values$type <- 'test'
 
-emptyPos <- testset.values$longitude == 0
-testset.values[emptyPos, 'longitude'] <- NA
-testset.values[emptyPos, 'latitude'] <- NA
-testset.values[emptyPos, 'gps_height'] <- NA
+geraudScore <- function(x) {
+  switch(as.character(x),
+         'functional' = 0.5,
+         'functional needs repair' = 1,
+         'non functional' = 2)
+}
 
-library(mice)
-imp <- mice(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')])
+setWithScore <- trainset.values
+setWithScore$score <- sapply(trainset.labels$status_group, geraudScore)
+
+library(plyr)
+scoreByWard <- ddply(setWithScore, .(lga, ward), summarise, score = mean(score))
+
+
+#library(mice)
+#imp <- mice(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')])
 
 library(Amelia)
-imp <- amelia(head(trainset.values, 10000), idvars = c('ward', 'lga'))
-imp <- amelia(trainset.values[,c('longitude', 'latitude', 'gps_height', 'ward', 'lga')], noms = c('ward', 'lga'))
-extraction_type.levels <- levels(factor(trainset.values$extraction_type))
-testset.values$extraction_type <- factor(testset.values$extraction_type, levels = extraction_type.levels)
+# trainAndTestSet <- merge(rbind(trainset.values, testset.values), scoreByWard)
+trainAndTestSet <- rbind(trainset.values, testset.values)
 
-trainset.impute.values <- read.csv('training-NA-imp5.csv', na.strings = '')
+set.seed(2)
+trainAndTestSetImpute <- amelia(x = trainAndTestSet, m = 5, idvars = c( "funder", "installer", "wpt_name", "basin", "subvillage", "region",  "lga", "ward", "public_meeting", "recorded_by", "permit",
+                                                                "extraction_type", "extraction_type_group",  "extraction_type_class", "management", "management_group", "payment",  "payment_type",
+                                                                "water_quality", "quality_group", "quantity",  "quantity_group", "source", "source_type", "source_class", "waterpoint_type",  "waterpoint_type_group",
+                                                                "region_code", "district_code",  "scheme_name", "type", 'date_recorded'), ts = NULL, cs = NULL, priors = NULL,  
+                         lags = NULL, empri = 0, intercs = FALSE, leads = NULL, splinetime = NULL,  
+                         logs = NULL, sqrts = NULL, lgstc = NULL, ords = NULL, noms = c("scheme_management"),  
+                         bounds = NULL, max.resample = 1000, tolerance = 1e-04) 
+imputation <- trainAndTestSetImpute$imputations$imp5
+imputation$construction_age <- 2015 - imputation$construction_year
+trainsetImpute <- subset(imputation, type == 'train')
+testsetImpute <- subset(imputation, type == 'test')
 
-sapply(trainset.values, class)
-cor(trainset.values)
+library(caret)
+set.seed(1234)
+reducedTrainset <- trainsetImpute
+inTrain <- createDataPartition(y=trainset.labels$status_group, p=0.8, list=FALSE)
+training <- reducedTrainset[inTrain,]
+trainingLabels <- trainset.labels[inTrain, 'status_group']
+testing <- reducedTrainset[-inTrain,]
+
+# Whole dataset
+training <- reducedTrainset
+trainingLabels <- trainset.labels[, 'status_group']
+
+allVariables <- colnames(reducedTrainset)
+predictors <- colnames(reducedTrainset)[!(allVariables 
+                                          %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'funder', 'installer', 'permit', 'public_meeting',
+                                                 'status_group', 'functional', 'nonfunctional', 'needrepair', 'lga', 'num_private',
+                                                 'recorded_by', 'quantity', 'ward', 'type',
+                                                 'date_recorded', 'date_recorded_year', 'construction_year'
+#                                                  'waterpoint_type_group', 'extraction_type_group', 'extraction_type_class', 'quantity_group', 'payment',
+#                                                  'management_group', 'quality_group'
+                                                 ))]
+trControl <- trainControl(method = 'repeatedcv', number = 10, preProcOptions = NULL, classProbs = TRUE, verboseIter = TRUE)
+trControl <- trainControl(method = 'none', number = 1, preProcOptions = NULL, classProbs = TRUE, verboseIter = TRUE)
+library(doMC)
+registerDoMC(3)
+set.seed(1234)
+rfModel <- train(training[,predictors], factor(trainingLabels, 
+                                               labels = c('func', 'repair', 'nonfunc')), 
+                 method = 'ranger', 
+                 trControl = trControl, tuneLength = 1)
+
+# svmModel <- train(training[,predictors], factor(trainset.labels[inTrain, 'status_group'], 
+#                                                labels = c('func', 'repair', 'nonfunc')), 
+#                  method = 'svmLinear', 
+#                  trControl = trControl, tuneLength = 1)
+# 
+# gbmModel <- train(training[,predictors], factor(trainset.labels[inTrain, 'status_group'], 
+#                                                 labels = c('func', 'repair', 'nonfunc')), 
+#                   method = 'gbm', 
+#                   trControl = trControl, tuneLength = 1)
+
+validation <- predict(rfModel, newdata = testing[,predictors])
+confusionMatrix(validation, factor(trainset.labels[-inTrain, 'status_group'], 
+                                   labels = c('func', 'repair', 'nonfunc')))
+
 summary(trainset.values)
 
 library(ggplot2)
@@ -136,7 +217,9 @@ write.table(rpartSubmission,
 rfProbs <- extractProb(list(rfModel$fit), unkX = testset.values[,selectedColumns])
 table(rfProbs$pred)
 
-rfSubmission <- data.frame(id = testset.values$id, status_group = rfProbs$pred)
+rfProbs <- predict(rfModel, newdata = testsetImpute[,predictors])
+
+rfSubmission <- data.frame(id = testset.values$id, status_group = factor(rfProbs, labels = levels(trainset.labels$status_group)))
 write.table(rfSubmission, 
             paste0('rfSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
             row.names = FALSE,
