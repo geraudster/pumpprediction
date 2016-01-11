@@ -66,6 +66,26 @@ imputation$construction_age <- 2015 - imputation$construction_year
 trainsetImpute <- subset(imputation, type == 'train')
 testsetImpute <- subset(imputation, type == 'test')
 
+
+## clusters test
+library(magrittr)
+lapply(colnames(trainsetImpute), function(col) {
+  if(is.factor(trainsetImpute[,col])) {
+    print(col)
+    statsByFunderInstaller <- ddply(merge(trainsetImpute, trainset.labels), col, summarise,
+      tot_functional = sum(status_group == 'functional'),
+      tot_repair = sum(status_group == 'functional needs repair'),
+      tot_nonfunctional = sum(status_group == 'non functional'))
+
+    corMatrix <- cor(scale(statsByFunderInstaller[,c('tot_functional', 'tot_repair', 'tot_nonfunctional')]))
+    corMatrix %>% .[upper.tri(corMatrix)] %>% is_greater_than(0.9) %>% sum %>% equals(3) %>%
+      print
+  }
+})
+
+kmeansFit <- kmeans(trainsetImpute[, c('funder', 'installer', 'scheme_management', 'amount_tsh', 'latitude', 'longitude', 'gps_height', 'population', 'quantity')], 10)
+
+
 library(caret)
 set.seed(1234)
 reducedTrainset <- trainsetImpute
