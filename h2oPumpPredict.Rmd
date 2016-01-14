@@ -1,3 +1,11 @@
+---
+title: "Pump it up - Driven Data"
+output:
+  html_document:
+    theme: spacelab
+    toc: yes
+---
+    
 # Pump it up with H2O and R
 
 ![H2O Logo](pics/h2o-logo_360.png)
