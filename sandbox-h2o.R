@@ -1,5 +1,5 @@
 library(h2o)
-localH2O <- h2o.init(min_mem_size = '10G', nthreads = 4)
+localH2O <- h2o.init(min_mem_size = '5G', nthreads = 4)
 trainset.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_values.csv', destination_frame = 'trainset.hex', sep = ',', header = TRUE)
 labels.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_labels.csv', destination_frame = 'labels.hex', sep = ',', header = TRUE)
 
@@ -14,6 +14,11 @@ head(labels.hex)
 trainsetFull.split <- h2o.splitFrame(trainsetFull.hex)
 sapply(trainsetFull.split, dim)
 sapply(trainsetFull.hex, class)
+
+allVariables <- colnames(trainsetFull.hex)
+predictors <- colnames(trainsetFull.hex)[!(allVariables 
+                                              %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'funder',
+                                                     'status_group', 'ward_lga'))]
 
 ## Try to concat ward and lga
 wardlga <- data.frame(id=as.vector(trainsetFull.hex$id), wardlga = paste(as.vector(trainsetFull.hex$ward), as.vector(trainsetFull.hex$lga), sep = '_'))
