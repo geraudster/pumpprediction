@@ -1,5 +1,5 @@
 # Set this to where Spark is installed
-Sys.setenv(SPARK_HOME="/home/geraud/apps/spark-1.5.2-bin-hadoop2.6")
+Sys.setenv(SPARK_HOME="/opt/spark/spark-1.6.1-bin-hadoop2.6")
 Sys.setenv('SPARKR_SUBMIT_ARGS'='"--packages" "com.databricks:spark-csv_2.10:1.3.0" "sparkr-shell"')
 
 # This line loads SparkR from the installed directory

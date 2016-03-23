@@ -4,14 +4,19 @@ output:
   html_document:
     theme: spacelab
     toc: yes
+    includes:
+      after_body: disqus.html
 ---
-    
-# Pump it up with H2O and R
 
-![H2O Logo](pics/h2o-logo_360.png)
-Competition link: http://www.drivendata.org/competitions/7/page/23/
+## Pump it up with H2O and R
 
-*TODO: small description
+This post will describe how to use R and H2O to obtain a not that bad score in a DrivenData challenge.
+
+[DrivenData](http://www.drivendata.org) is a site that provides cool data science competitions to
+« Save the world ». One of those competitions is called [Pump it Up: Data Mining the Water Table](http://www.drivendata.org/competitions/7/page/23/) and aims at predicting Tanzanian water pump health.
+
+Given data from Taarifa and the Tanzanian Ministry of Water, you have to predict the status of pump station
+and tell wheter they are funcitonal, non functional or if they need repair.
 
 ## Data codebook
 
@@ -62,22 +67,38 @@ Here we can see two things:
 * first, classes are imbalanced, there are far less 'need repair' than other classes
 * second, the map seems to indicate that geographic position has an importance on the pump status
 
+Those issues are main concerns to achieve a high score, we will ignore those points at the moment and
+rather create a first model as simple as possible.
 
 ## H2O
 
-### Pre-requisites
+```{r, out.width = 200, fig.retina = NULL, echo = FALSE}
+knitr::include_graphics('pics/h2o-logo_360.png')
+```
+
+[H2O](http://h2o.ai) is an open-source tool that provides easy way to apply math and predictive 
+analytics. It can work on top of Hadoop and Spark and provides nice APIs so you can use it
+from several languages like Java, Python and *R*.
+
+Here we will describe:
+
+ * how to install H2O from R
+ * perform data manipulation
+ * train a random forest
+
+### H2O Installation from R
+
+#### Pre-requisites
 
 * R
 * Java: JRE at least 1.6 (1.7 recommended)
-
-### H2O Installation from R
 
 The following command wil install latest version of H2O:
 ```{r, eval = FALSE}
 install.packages("h2o", type = "source", repos = (c("http://h2o-release.s3.amazonaws.com/h2o/rel-tibshirani/8/R")))
 ```
 
-### Your first instance
+#### Your first instance
 
 Starting a local instance is quite simple:
 ```{r, cache = TRUE}
@@ -92,21 +113,56 @@ localH2O <- h2o.init(nthreads = 12, max_mem_size = '24G')
 
 This will start a local instance running on 12 threads and 24GB RAM. There are also option to connect on remote cluster.
 
+## Data Manipulation
+
 ### Loading data into H2O
+
+H2O package provides function to import data from CSV files. Here we will load our trainset variables and labels:
 
 ```{r, cache = TRUE}
 trainset.hex <- h2o.uploadFile(path = 'trainset_values.csv', destination_frame = 'trainset.hex', sep = ',', header = TRUE)
 labels.hex <- h2o.uploadFile(path = 'trainset_labels.csv', destination_frame = 'labels.hex', sep = ',', header = TRUE)
 
-trainsetFull.hex <- h2o.merge(trainset.hex, labels.hex)
 ```
 
-Data should be loaded in H2O now, we can try a few commands:
+Data should be loaded in H2O now, we can try a few commands to see it :
+
+```{r, eval = FALSE}
+head(trainset.hex))
+```
+
+```{r, cache = TRUE, echo = FALSE}
+# Render table
+library(knitr)
+
+kable(head(trainset.hex))
+```
+
+### Manipulation
+
+We have loaded data as two separate datasets:
+
+ * **trainset.hex**: contains variables
+ * **labels.hex**: contains... labels (functional, non functional, or need repair)
+
+It could be useful to have all in one dataset, we can do this with **h2o.merge**:
+ 
+```{r, cache = TRUE}
+trainsetFull.hex <- h2o.merge(trainset.hex, labels.hex)
+
+# Check columns
+colnames(trainsetFull.hex)
+```
+
+Great! We can see the new column *status_group*.
+
+You can use standard operators like **$** or **[** to access the dataframe.
+For instance, you can get summary of one specifc column:
 
 ```{r, cache = TRUE}
-head(trainsetFull.hex)
-summary(trainsetFull.hex)
+summary(trainsetFull.hex$status_group)
 ```
+
 
 ### Machine Learning
 
@@ -145,18 +201,28 @@ Let's validate it:
 ```{r, cache = TRUE}
 confusionMatrix <- h2o.confusionMatrix(rfModel, newdata = test)
 
-# Render table
-library(knitr)
-kable(confusionMatrix)
+kable(confusionMatrix) # kable is a knitr function to display beautiful tables
 ```
 
 
 ### Results
 
+We ended with a quite good model with around 80% accuracy. Applying this model to
+the submission dataset, you should obtain a similar score.
+
+But what we also see here is that *needs repair* predictions are quite bad (error rate near 70%).
+That's another difficulty encountered in this competition that we will not address here!
+
 ### Shutting down
+
+Now that we finished our analysis, we can shutdown the H2O cluster:
 
 ```{r, cache = TRUE}
 h2o.shutdown(prompt = FALSE)
+```
+
+```{html}
+<b>test</b>
 ```
 
 
