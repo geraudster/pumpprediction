@@ -5,7 +5,7 @@ output:
     theme: spacelab
     toc: yes
     includes:
-      after_body: disqus.html
+      after_body: [include/disqus.html, include/license.html]
 ---
 
 ## Pump it up with H2O and R
@@ -221,8 +221,5 @@ Now that we finished our analysis, we can shutdown the H2O cluster:
 h2o.shutdown(prompt = FALSE)
 ```
 
-```{html}
-<b>test</b>
-```
 
 
