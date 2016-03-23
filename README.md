@@ -8,4 +8,4 @@ Several approaches:
 * sandbox-impute.R: same with missing values imputation
 * sandbox-h2o.\*R: tests with [H2O](http://h2o.ai)
 
-Competition description and simple random forest: https://geraudster.github.io/pumpprediction/h2oPumpPredict.html
+Competition description and simple random forest: https://rstudio-server.gddb.fr/files/pumpprediction/h2oPumpPredict.html

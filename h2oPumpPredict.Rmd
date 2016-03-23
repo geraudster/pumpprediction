@@ -5,6 +5,7 @@ output:
     theme: spacelab
     toc: yes
     includes:
+      before_body: include/ribbon.html
       after_body: [include/disqus.html, include/license.html]
 ---
 
