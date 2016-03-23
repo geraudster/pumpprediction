@@ -1,36 +1,10 @@
+source('common.R')
 trainset.values <- read.csv('trainset_values.csv', na.strings = "")
 trainset.labels <- read.csv('trainset_labels.csv', na.strings = "")
 testset.values <- read.csv('testset_values.csv', na.strings = "")
 
-library(lubridate)
-prepareDataSet <- function(dataset) {
-  emptyPos <- dataset$longitude == 0
-  dataset[emptyPos, 'longitude'] <- NA
-  dataset[emptyPos, 'latitude'] <- NA
-  dataset[emptyPos, 'gps_height'] <- NA
-  
-  emptyConstrutionYear <- dataset$construction_year == 0
-  dataset[emptyConstrutionYear,'construction_year'] <- NA
-  
-  dataset$wpt_name <- as.character(dataset$wpt_name)
-  
-  dataset$date_recorded <- ymd(dataset$date_recorded)
-  dataset$date_recorded_year <- year(dataset$date_recorded)
-  dataset$date_recorded_year_ago <- 2015 - dataset$date_recorded_year
-  dataset$date_recorded_month <- month(dataset$date_recorded)
-  dataset$date_recorded_day <- day(dataset$date_recorded)
-  
-  # dataset$construction_year <- parse_date_time(dataset$construction_year, 'y')
-  dataset$region_code <- factor(dataset$region_code)
-  dataset$district_code <- factor(dataset$district_code)
-  dataset
-}
-
-trainset.values <- prepareDataSet(trainset.values)
-testset.values <- prepareDataSet(testset.values)
-
-trainset.values$type <- 'train'
-testset.values$type <- 'test'
+trainset.values <- prepareDataSet(trainset.values, 'train')
+testset.values <- prepareDataSet(testset.values, 'test')
 
 geraudScore <- function(x) {
   switch(as.character(x),
@@ -68,35 +42,73 @@ testsetImpute <- subset(imputation, type == 'test')
 
 
 ## clusters test
+
 library(magrittr)
-lapply(colnames(trainsetImpute), function(col) {
+corrGroup <- ldply(colnames(trainsetImpute), function(col) {
   if(is.factor(trainsetImpute[,col])) {
     print(col)
     statsByFunderInstaller <- ddply(merge(trainsetImpute, trainset.labels), col, summarise,
-      tot_functional = sum(status_group == 'functional'),
-      tot_repair = sum(status_group == 'functional needs repair'),
-      tot_nonfunctional = sum(status_group == 'non functional'))
-
-    corMatrix <- cor(scale(statsByFunderInstaller[,c('tot_functional', 'tot_repair', 'tot_nonfunctional')]))
-    corMatrix %>% .[upper.tri(corMatrix)] %>% is_greater_than(0.9) %>% sum %>% equals(3) %>%
-      print
+                                    tot_functional = sum(status_group == 'functional') / length(status_group),
+                                    tot_repair = sum(status_group == 'functional needs repair') / length(status_group),
+                                    tot_nonfunctional = sum(status_group == 'non functional') / length(status_group))
+    
+    corMatrix <- cor(statsByFunderInstaller[,c('tot_functional', 'tot_repair', 'tot_nonfunctional')])
+    print(corMatrix %>% .[upper.tri(corMatrix)] )
+#     %>% is_greater_than(0.9) %>% sum %>% equals(3) %>%
+#       c(col, .)
   }
 })
 
-kmeansFit <- kmeans(trainsetImpute[, c('funder', 'installer', 'scheme_management', 'amount_tsh', 'latitude', 'longitude', 'gps_height', 'population', 'quantity')], 10)
+trainsetImputWithLabel <- merge(trainsetImpute, trainset.labels)
+cols <- colnames(trainsetImpute)
+#cols <- colnames(trainsetImpute)[colnames(trainsetImpute) %in% subset(corrGroup, V2 == FALSE)$V1]
+aggregs <- sapply(cols, function(col) {
+  if(is.factor(trainsetImpute[,col])) {
+    print(col)
+    as.data.frame(ddply(trainsetImputWithLabel, col, summarise,
+          tot_functional = sum(status_group == 'functional'),
+          tot_repair = sum(status_group == 'functional needs repair'),
+          tot_nonfunctional = sum(status_group == 'non functional')))
+  }
+})
 
+mergeAggregs <- function (dataset, aggregs) {
+  for(var in names(aggregs)) {
+    if(!is.null(aggregs[[var]])) {
+      print(var)
+      dataset <- merge(dataset, aggregs[[var]], all.x = TRUE)
+      # print(colnames(dataset[,c('tot_functional', 'tot_repair', 'tot_nonfunctional')]))
+      colnames(dataset)[colnames(dataset) %in% c('tot_functional', 'tot_repair', 'tot_nonfunctional')] <- 
+        make.names(paste(c('tot_functional', 'tot_repair', 'tot_nonfunctional'), var))
+    }
+  }
+  dataset
+}
+
+trainsetWithAggregs <- mergeAggregs(trainsetImpute, aggregs[subset(corrGroup, V2 == FALSE)$V1])
+predictorsAggregs <- colnames(trainsetWithAggregs)[!colnames(trainsetWithAggregs) %in% c('id', 'status_group')]
+predictorsAggregsPos <- grep('tot_', colnames(trainsetWithAggregs))
+
+trainsetWithAggregsScaled <- cbind(trainsetWithAggregs[, -predictorsAggregsPos],
+                                   as.data.frame(scale(trainsetWithAggregs[,predictorsAggregsPos])))
+                                   
+#kmeansFit <- kmeans(trainsetImpute[, c('funder', 'installer', 'scheme_management', 'amount_tsh', 'latitude', 'longitude', 'gps_height', 'population', 'quantity')], 10)
+kmeansFit <- kmeans(trainsetImpute[, subset(corrGroup, V2 == TRUE)$V1], 10)
 
 library(caret)
 set.seed(1234)
-reducedTrainset <- trainsetImpute
+# reducedTrainset <- trainsetImpute
+reducedTrainset <- trainsetWithAggregsScaled
 inTrain <- createDataPartition(y=trainset.labels$status_group, p=0.8, list=FALSE)
 training <- reducedTrainset[inTrain,]
 trainingLabels <- trainset.labels[inTrain, 'status_group']
 testing <- reducedTrainset[-inTrain,]
+testingWithLabels <- merge(testing, trainset.labels)
 
 # Whole dataset
 training <- reducedTrainset
 trainingLabels <- trainset.labels[, 'status_group']
+trainingWithLabels <- merge(training, trainset.labels, by = c('id'))
 
 allVariables <- colnames(reducedTrainset)
 predictors <- colnames(reducedTrainset)[!(allVariables 
@@ -107,13 +119,19 @@ predictors <- colnames(reducedTrainset)[!(allVariables
 #                                                  'waterpoint_type_group', 'extraction_type_group', 'extraction_type_class', 'quantity_group', 'payment',
 #                                                  'management_group', 'quality_group'
                                                  ))]
+
+predictors <- predictorsAggregs
+predictors <- colnames(reducedTrainset)[!(allVariables 
+                                          %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'funder', 'installer', 'permit', 'public_meeting',
+                                                 'recorded_by', 'type'))]
+predictors <- predictors[- grep('tot_', predictors)]
 trControl <- trainControl(method = 'repeatedcv', number = 10, preProcOptions = NULL, classProbs = TRUE, verboseIter = TRUE)
 trControl <- trainControl(method = 'none', number = 1, preProcOptions = NULL, classProbs = TRUE, verboseIter = TRUE)
 library(doMC)
 registerDoMC(3)
 set.seed(1234)
-rfModel <- train(training[,predictors], factor(trainingLabels, 
-                                               labels = c('func', 'repair', 'nonfunc')), 
+rfModel <- train(trainingWithLabels[,predictors], factor(trainingWithLabels$status, 
+                                                         labels = c('func', 'repair', 'nonfunc')), 
                  method = 'ranger', 
                  trControl = trControl, tuneLength = 1)
 
@@ -127,8 +145,8 @@ rfModel <- train(training[,predictors], factor(trainingLabels,
 #                   method = 'gbm', 
 #                   trControl = trControl, tuneLength = 1)
 
-validation <- predict(rfModel, newdata = testing[,predictors])
-confusionMatrix(validation, factor(trainset.labels[-inTrain, 'status_group'], 
+validation <- predict(rfModel, newdata = testingWithLabels[,predictors])
+confusionMatrix(validation, factor(testingWithLabels$status_group, 
                                    labels = c('func', 'repair', 'nonfunc')))
 
 summary(trainset.values)
@@ -256,3 +274,9 @@ pumps2[emptyCoords, 'longitude'] <- NA
 pumps2[emptyCoords, 'latitude'] <- NA
 pumps2[emptyCoords, 'gps_height'] <- NA
 imp.pimp <- mice(pumps2)
+
+
+## submit with aggregs
+
+
+#writeSubmission(rfModel, testset.values, 'id', 'status_group', 'pumpprediction')
