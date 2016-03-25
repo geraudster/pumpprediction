@@ -291,22 +291,46 @@ testset.values &lt;- read.csv('testset_values.csv')</code></pre>
 <div id="your-first-instance" class="section level4">
 <h4>Your first instance</h4>
 <p>Starting a local instance is quite simple:</p>
-<pre class="r"><code>library(h2o)
-localH2O &lt;- h2o.init()</code></pre>
+<pre class="r"><code>library(h2o)</code></pre>
+<pre><code>## Loading required package: statmod</code></pre>
+<pre><code>## 
+## ----------------------------------------------------------------------
+## 
+## Your next step is to start H2O:
+##     &gt; h2o.init()
+## 
+## For H2O package documentation, ask for help:
+##     &gt; ??h2o
+## 
+## After starting H2O, you can use the Web UI at http://localhost:54321
+## For more information visit http://docs.h2o.ai
+## 
+## ----------------------------------------------------------------------</code></pre>
+<pre><code>## 
+## Attaching package: 'h2o'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     sd, var</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     ||, &amp;&amp;, %*%, apply, as.factor, as.numeric, colnames,
+##     colnames&lt;-, ifelse, %in%, is.character, is.factor, is.numeric,
+##     log, log10, log1p, log2, round, signif, trunc</code></pre>
+<pre class="r"><code>localH2O &lt;- h2o.init()</code></pre>
 <pre><code>## 
 ## H2O is not running yet, starting it now...
 ## 
 ## Note:  In case of errors look at the following log files:
-##     /tmp/RtmpD9J5tI/h2o_rstudio_started_from_r.out
-##     /tmp/RtmpD9J5tI/h2o_rstudio_started_from_r.err
+##     /tmp/RtmpkG0USf/h2o_rstudio_started_from_r.out
+##     /tmp/RtmpkG0USf/h2o_rstudio_started_from_r.err
 ## 
 ## 
 ## Starting H2O JVM and connecting: .. Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         2 seconds 196 milliseconds 
+##     H2O cluster uptime:         2 seconds 242 milliseconds 
 ##     H2O cluster version:        3.8.1.3 
-##     H2O cluster name:           H2O_started_from_R_rstudio_qxe848 
+##     H2O cluster name:           H2O_started_from_R_rstudio_itn630 
 ##     H2O cluster total nodes:    1 
 ##     H2O cluster total memory:   1.69 GB 
 ##     H2O cluster total cores:    2 
@@ -699,18 +723,18 @@ train &lt;- splits[[1]]
 test &lt;- splits[[2]]
 
 dim(train)</code></pre>
-<pre><code>## [1] 47369    41</code></pre>
+<pre><code>## [1] 47610    41</code></pre>
 <pre class="r"><code>dim(test)</code></pre>
-<pre><code>## [1] 12031    41</code></pre>
+<pre><code>## [1] 11790    41</code></pre>
 <p>Now we’ll check label proportion:</p>
 <pre class="r"><code>prop.table(table(as.vector(train$status_group)))</code></pre>
 <pre><code>## 
 ##              functional functional needs repair          non functional 
-##              0.54352002              0.07253689              0.38394309</code></pre>
+##              0.54303718              0.07309389              0.38386894</code></pre>
 <pre class="r"><code>prop.table(table(as.vector(test$status_group)))</code></pre>
 <pre><code>## 
 ##              functional functional needs repair          non functional 
-##               0.5413515               0.0732275               0.3854210</code></pre>
+##              0.54325700              0.07099237              0.38575064</code></pre>
 <p>We will restrict the list of predictors as some nominal values contain lots of categories (‘wpt_name’, ‘subvillage’, ‘scheme_name’, ‘installer’, ‘ward’, ‘funder’):</p>
 <pre class="r"><code>allVariables &lt;- colnames(train)
 predictors &lt;- colnames(train)[!(allVariables %in% c('id', 'wpt_name', 'subvillage', 'scheme_name', 'installer', 'ward', 'funder', 'status_group', 'recorded_by'))]</code></pre>
@@ -732,35 +756,35 @@ predictors &lt;- colnames(train)[!(allVariables %in% c('id', 'wpt_name', 'subvil
   |                                                                       
   |================                                                 |  24%
   |                                                                       
-  |==================                                               |  28%
+  |====================                                             |  30%
   |                                                                       
   |======================                                           |  34%
   |                                                                       
-  |=========================                                        |  38%
+  |==========================                                       |  40%
   |                                                                       
-  |===========================                                      |  42%
+  |=============================                                    |  44%
   |                                                                       
   |===============================                                  |  48%
   |                                                                       
-  |==================================                               |  52%
+  |===================================                              |  54%
   |                                                                       
-  |====================================                             |  56%
+  |=======================================                          |  60%
   |                                                                       
-  |========================================                         |  62%
-  |                                                                       
-  |===========================================                      |  66%
+  |==========================================                       |  64%
   |                                                                       
   |==============================================                   |  70%
   |                                                                       
-  |=================================================                |  76%
+  |================================================                 |  74%
   |                                                                       
   |====================================================             |  80%
   |                                                                       
-  |========================================================         |  86%
+  |=======================================================          |  84%
   |                                                                       
   |==========================================================       |  90%
   |                                                                       
-  |==============================================================   |  96%
+  |=============================================================    |  94%
+  |                                                                       
+  |================================================================ |  98%
   |                                                                       
   |=================================================================| 100%</code></pre>
 <p>Let’s validate it:</p>
@@ -781,35 +805,35 @@ kable(confusionMatrix) # kable is a knitr function to display beautiful tables</
 <tbody>
 <tr class="odd">
 <td align="left">functional</td>
-<td align="right">5905</td>
-<td align="right">107</td>
-<td align="right">501</td>
-<td align="right">0.0933518</td>
-<td align="left">608 / 6,513</td>
+<td align="right">5842</td>
+<td align="right">102</td>
+<td align="right">461</td>
+<td align="right">0.0879001</td>
+<td align="left">563 / 6,405</td>
 </tr>
 <tr class="even">
 <td align="left">functional needs repair</td>
-<td align="right">509</td>
-<td align="right">237</td>
-<td align="right">135</td>
-<td align="right">0.7309875</td>
-<td align="left">644 / 881</td>
+<td align="right">476</td>
+<td align="right">243</td>
+<td align="right">118</td>
+<td align="right">0.7096774</td>
+<td align="left">594 / 837</td>
 </tr>
 <tr class="odd">
 <td align="left">non functional</td>
-<td align="right">1096</td>
-<td align="right">48</td>
-<td align="right">3493</td>
-<td align="right">0.2467112</td>
-<td align="left">1,144 / 4,637</td>
+<td align="right">1108</td>
+<td align="right">37</td>
+<td align="right">3403</td>
+<td align="right">0.2517590</td>
+<td align="left">1,145 / 4,548</td>
 </tr>
 <tr class="even">
 <td align="left">Totals</td>
-<td align="right">7510</td>
-<td align="right">392</td>
-<td align="right">4129</td>
-<td align="right">0.1991522</td>
-<td align="left">2,396 / 12,031</td>
+<td align="right">7426</td>
+<td align="right">382</td>
+<td align="right">3982</td>
+<td align="right">0.1952502</td>
+<td align="left">2,302 / 11,790</td>
 </tr>
 </tbody>
 </table>
