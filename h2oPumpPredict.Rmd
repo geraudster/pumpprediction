@@ -99,7 +99,7 @@ Here we will describe:
 
 The following command will install the latest version of H2O:
 ```{r, eval = FALSE}
-install.packages("h2o", type = "source", repos = (c("http://h2o-release.s3.amazonaws.com/h2o/rel-tibshirani/8/R")))
+install.packages('h2o')
 ```
 
 #### Your first instance
