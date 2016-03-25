@@ -14,11 +14,13 @@ output:
 
 This post will describe how to use R and H2O to obtain a not that bad score in a DrivenData challenge.
 
-[DrivenData](http://www.drivendata.org) is a site that provides cool data science competitions to
+[DrivenData](http://www.drivendata.org) is a site that provides interesting data science competitions to
 « Save the world ». One of those competitions is called [Pump it Up: Data Mining the Water Table](http://www.drivendata.org/competitions/7/page/23/) and aims at predicting Tanzanian water pump health.
 
 Given data from Taarifa and the Tanzanian Ministry of Water, you have to predict the status of pump station
-and tell wheter they are funcitonal, non functional or if they need repair.
+and tell whether they are functional, non functional or if they need repair.
+
+First, we will see how data looks like, then we will focus on using H2O, and finally we'll train our first random forest.
 
 ## Data codebook
 
@@ -80,7 +82,7 @@ knitr::include_graphics('pics/h2o-logo_360.png')
 
 [H2O](http://h2o.ai) is an open-source tool that provides easy way to apply math and predictive 
 analytics. It can work on top of Hadoop and Spark and provides nice APIs so you can use it
-from several languages like Java, Python and *R*.
+from several languages like Java, Python and *R* (and even Microsoft Excel!).
 
 Here we will describe:
 
@@ -95,7 +97,7 @@ Here we will describe:
 * R
 * Java: JRE at least 1.6 (1.7 recommended)
 
-The following command wil install latest version of H2O:
+The following command will install the latest version of H2O:
 ```{r, eval = FALSE}
 install.packages("h2o", type = "source", repos = (c("http://h2o-release.s3.amazonaws.com/h2o/rel-tibshirani/8/R")))
 ```
