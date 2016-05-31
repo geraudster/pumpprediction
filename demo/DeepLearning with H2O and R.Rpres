@@ -1,0 +1,87 @@
+DeepLearning with H2O and R
+========================================================
+autosize: true
+#subtitle: Lightning Talk
+author: Géraud Dugé de Bernonville
+#job: Java & Big Data Consultant
+#license: by-sa
+
+Qui suis-je ?
+========================================================
+
+@geraudster
+
+Consultant Java & Big Data @ Valtech
+
+Ateliers R Toulouse Data Science
+
+Compétitions drivendata, kaggle, datascience.net
+
+Deep Learning
+========================================================
+
+Réseau de neurone
+
+Deep == Plusieurs couches
+
+Les typologies de réseau
+========================================================
+
+Supervisé: 
+
+* Deep Belief Network
+* CNN = Convolutional
+* RNN = Recurrent
+
+Non supervisé:
+
+* autoencoder
+
+H2O
+========================================================
+
+Outil pour l'analyse de données:
+
+* algorithmes de Machine Learning
+* deep learning
+* distribué, multi-threadé
+
+Open-source
+
+Application avec R
+========================================================
+
+Initialisation d'un cluster local:
+```{r, eval = FALSE}
+library(h2o)
+localH2O <- h2o.init(min_mem_size = '5G', nthreads = 4)
+```
+
+Chargement des données:
+```{r, eval = FALSE}
+trainset.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_values.csv',
+                               destination_frame = 'trainset.hex',
+                               sep = ',', header = TRUE)
+```
+
+Première version
+========================================================
+
+Utilisation des paramètres par défaut (2 couches de 200 neurones):
+```{r, eval = FALSE}
+
+```
+
+Nouvelles tentatives
+========================================================
+
+Test avec plusieurs paramètres + plot
+
+Tuning des hyper-paramètres
+========================================================
+
+h2o.grid
+
+Mise en production du modèle
+========================================================
+
