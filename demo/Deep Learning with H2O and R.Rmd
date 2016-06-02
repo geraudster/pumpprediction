@@ -1,21 +1,18 @@
-<style>
-.footer {
-    color: black; background: #E8E8E8;
-    position: fixed; bottom: 10%;
-    text-align: left; width:100%;
-}
-</style>
-<footer class="footer">@geraudster</footer>
+---
+title: "DeepLearning with H2O and R"
+author: "Géraud Dugé de Bernonville"
+date: "June 2, 2016"
+output: ioslides_presentation
+license: by-sa
+job: Java & Big Data Consultant
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
 
 DeepLearning with H2O and R
 ========================================================
-autosize: true
-#subtitle: Lightning Talk
-author: Géraud Dugé de Bernonville
-#job: Java & Big Data Consultant
-#license: by-sa
-#todo: 13 diapos
-
 @geraudster
 
 Consultant Java & Big Data @ Valtech

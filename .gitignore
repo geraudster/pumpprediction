@@ -3,3 +3,8 @@
 .RData
 packrat/lib*/
 packrat/src/
+*.pdf
+*.csv
+*.log
+*_cache/
+*_files/
