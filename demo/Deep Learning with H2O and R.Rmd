@@ -2,7 +2,10 @@
 title: "DeepLearning with H2O and R"
 author: "Géraud Dugé de Bernonville"
 date: "June 2, 2016"
-output: ioslides_presentation
+output: 
+  beamer_presentation:
+    keep_tex: yes
+    slide_level: 1
 license: by-sa
 job: Java & Big Data Consultant
 ---
@@ -10,9 +13,6 @@ job: Java & Big Data Consultant
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
-
-DeepLearning with H2O and R
-========================================================
 @geraudster
 
 Consultant Java & Big Data @ Valtech
@@ -21,18 +21,22 @@ Ateliers R Toulouse Data Science
 
 Compétitions drivendata, kaggle, datascience.net
 
-Deep Learning
-========================================================
+# Deep Learning
+## Origines
 
+\begin{columns}
+  \begin{column}{.5\textwidth}
 Réseau de neurone
 
 Deep == Plusieurs couches
-***
-![Réseau de neurons](Colored_neural_network.svg)
+  \end{column}
+  \begin{column}{.5\textwidth}
+    \includegraphics{img/Colored_neural_network.png}
+  \end{column}
+\end{columns}
 
-
-Les typologies de réseau
-========================================================
+# Deep Learning
+## Les typologies de réseau
 
 Supervisé: 
 
@@ -43,14 +47,13 @@ Supervisé:
 Non supervisé:
 
 * autoencoder
-![Autoencoder](Autoencoder_structure.png)
+![Autoencoder](img/Autoencoder_structure.png)
 
 ***
-![CNN](Typical_cnn.png)
-![RNN](Lstm_block.svg)
+![CNN](img/Typical_cnn.png)
+![RNN](img/Lstm_block.png)
 
-H2O
-========================================================
+# H2O
 
 Outil pour l'analyse de données:
 
@@ -60,16 +63,14 @@ Outil pour l'analyse de données:
 
 Open-source
 
-Cas d'utilisation
-========================================================
+# Cas d'utilisation
 
 * DrivenData.org
 * Prédiction de l'état des pompes à eau à Tanzanie
 * ... _description des données_
 
 
-Application avec R
-========================================================
+# Application avec R
 
 Initialisation d'un cluster local:
 ```{r, eval = FALSE}
@@ -84,39 +85,33 @@ trainset.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_values
                                sep = ',', header = TRUE)
 ```
 
-Première version
-========================================================
+# Première version
 
 Utilisation des paramètres par défaut (2 couches de 200 neurones):
 ```{r, eval = FALSE}
 
 ```
 
-Nouvelles tentatives
-========================================================
+# Nouvelles tentatives
 
 Test avec plusieurs paramètres + plot
 
-Tuning des hyper-paramètres
-========================================================
+# Tuning des hyper-paramètres
 
 h2o.grid
 
-Mise en production du modèle
-========================================================
+# Mise en production du modèle
 
-Pour en savoir plus
-========================================================
+#Pour en savoir plus
 
 http://h2o.ai
 
-![R with H2O](r-booklet-cover.png)
+![R with H2O](img/r-booklet-cover.png)
 ***
-![R Deep Learning Essentials](R\ Deep\ Learning\ Essentials.png)
+![R Deep Learning Essentials](img/R\ Deep\ Learning\ Essentials.png)
 
 
-Creds
-========================================================
+#Creds
 
 By Glosser.ca - Own work, Derivative of File:Artificial neural network.svg, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=24913461
 

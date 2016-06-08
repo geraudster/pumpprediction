@@ -1,15 +1,5 @@
 ## grid
 
-hyper_params <- list(
-  hidden=list(
-    rep(50, 2),
-    rep(100, 2),
-    rep(200, 2),
-    rep(300, 2)),
-  activation = c('Rectifier', 'RectifierWithDropout'),
-  l1 = c(0, c(1e-5))
-)
-
 # grid <- h2o.grid('deeplearning',
 #                  x = predictors, y = 'status_group',
 #                  training_frame = trainsetFull.split[[1]],
@@ -17,10 +7,12 @@ hyper_params <- list(
 #                  activation = "Tanh",
 #                  autoencoder = FALSE, epochs = 100,
 #                  hyper_params = hyper_params)
-grid <- h2o.grid('deeplearning',
-                 x = predictors, y = 'status_group',
-                 training_frame = trainsetFull.split[[1]],
-                 hyper_params = hyper_params)
+grid <- h2o.grid('deeplearning', x = predictors, y = 'status_group',
+                 training_frame = trainset,
+                 hyper_params = list(
+                   hidden=list(rep(100, 2), rep(200, 2), rep(300, 2)),
+                   activation = c('Rectifier', 'RectifierWithDropout'),
+                   l1 = c(0, 1e-5)))
 
 models <- lapply(grid@model_ids, function(id) { h2o.getModel(id)})
 
