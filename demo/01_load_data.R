@@ -30,7 +30,7 @@ submit <- function(model, dataset) {
   submission <- data.frame(as.data.frame(dataset$id), as.data.frame(preds$predict))
   colnames(submission) <- c('id', 'status_group')
   write.table(submission, 
-              paste0('rfH2oSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
+              paste0('submissions/rfH2oSubmission', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv'),
               row.names = FALSE,
               sep=',', quote = FALSE)
 }

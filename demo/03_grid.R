@@ -7,14 +7,21 @@
 #                  activation = "Tanh",
 #                  autoencoder = FALSE, epochs = 100,
 #                  hyper_params = hyper_params)
+# hidden=list(rep(100, 2), rep(200, 2), rep(300, 2), rep(400, 2), rep(400, 3)), # logloss = 0.233676544101873
+
 grid <- h2o.grid('deeplearning', x = predictors, y = 'status_group',
                  training_frame = trainset,
+                 validation_frame = testset,
                  hyper_params = list(
-                   hidden=list(rep(100, 2), rep(200, 2), rep(300, 2)),
+                   hidden=list(rep(1024, 3), rep(400, 4), rep(400, 5)),
                    activation = c('Rectifier', 'RectifierWithDropout'),
-                   l1 = c(0, 1e-5)))
+                   l1 = c(0, 1e-5),
+                   l2 = c(0, 1e-5),
+                   epochs = 100))
 
 models <- lapply(grid@model_ids, function(id) { h2o.getModel(id)})
+h2o.saveModel(models[[1]], 'models')
+submit(models[[1]], validation) # score 0.7931
 
 library(plyr)
 laply(models, function (x) { list(hidden = paste(x@parameters$hidden, collapse = ' '), r2 = h2o.r2(x)) })

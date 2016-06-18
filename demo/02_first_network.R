@@ -2,7 +2,7 @@ deepModel <- h2o.deeplearning(predictors, 'status_group', trainset)
 h2o.confusionMatrix(deepModel, testset)
 
 deepModel.h100 <- h2o.deeplearning(predictors, 'status_group', trainset,
-                                   hidden = c(100, 100))
+                                   hidden = c(300, 100))
 h2o.confusionMatrix(deepModel.h100, testset)
 
 submit(deepModel, validation) # should score 0.7801 
