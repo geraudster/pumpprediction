@@ -1,10 +1,10 @@
 library(h2o)
-localH2O <- h2o.init(min_mem_size = '5G', nthreads = 4)
-trainset.hex <- h2o.uploadFile(path = '~/pumpprediction/trainset_values.csv')
+localH2O <- h2o.init(min_mem_size = '10G', nthreads = 4)
+trainset.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_values.csv')
 
-labels.hex <- h2o.uploadFile(path = '~/pumpprediction/trainset_labels.csv')
+labels.hex <- h2o.uploadFile(path = '~/projects/pumpprediction/trainset_labels.csv')
 
-validation <- h2o.uploadFile('~/pumpprediction/testset_values.csv')
+validation <- h2o.uploadFile('~/projects/pumpprediction/testset_values.csv')
 trainsetFull.hex <- h2o.merge(trainset.hex, labels.hex)
 
 dim(trainsetFull.hex)

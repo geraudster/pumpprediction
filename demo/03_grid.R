@@ -9,6 +9,8 @@
 #                  hyper_params = hyper_params)
 # hidden=list(rep(100, 2), rep(200, 2), rep(300, 2), rep(400, 2), rep(400, 3)), # logloss = 0.233676544101873
 
+
+
 grid <- h2o.grid('deeplearning', x = predictors, y = 'status_group',
                  training_frame = trainset,
                  validation_frame = testset,
